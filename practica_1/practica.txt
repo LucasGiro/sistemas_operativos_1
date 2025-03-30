@@ -1,0 +1,40 @@
+ejercicio 2:
+
+a- si se escribe en el mismo no se verá nada en pantalla.
+
+b- al intentar leer de la entrada estandar la funcion read() retorná -1 indicando que hubo un error.
+
+c- al cerrar una de las copias se podrá seguir usando la copia que se creó.
+
+d- El valor de getpid() para el padre sigue siendo el mismo y para el hijo será el pid que se asignó al momento de ser creado.
+Al hacer exec(), getpid() no cambia para el proceso.
+
+e- El hijo aparece en la tabla de procesos con el estado Z (zombie).
+
+f- Sí, aumenta el uso de memoria virtual del proceso, aunque el uso de memoria física no aumenta.
+
+g- El uso de memoria de un proceso que realiza un fork() no cambia.
+
+h- Los file descriptor del proceso que llama a fork() se copian al proceso hijo creado. Cuando se llama a exec() estos file descriptor se mantienen.
+
+i- No, no puede implementarse mediante un programa al igual que ls, pues ls ya se encuentra como un ejecutable en /bin y se puede llamar desde cualquier proceso,
+mientras que con el comando cd esto no se puede hacer, pues si un proceso hijo lo ejecuta, no podrá modificar la ruta de archivo donde se está ejecutando el padre (que sería la shell).
+
+ejercicio 3:
+
+Creo que está implementado de manera que se ejecuten al mismo tiempo los programas yes e ./installer para que luego el file descriptor stdout del proceso yes
+se conecte a la entrada de un pipe y el proceso ./installer conecte su fd stdin en la salida del pipe. Así, el proceso ./installer recibe el comando "y" como si el
+usuario lo estuviese escribiendo y ejecutando desde la terminal.
+
+ejercicio 4:
+
+Cuando un proceso no libera su memoria antes de terminar directamente la libera el sistema operativo al memento en el que termina el proceso.
+
+ejercicio 5:
+
+free() no es una llamada al sistema ya que strace no la registra como tal.
+
+ejercicio 6:
+
+getchar() es una llamada al sistema ya que al ejecutarla strace detectó las llamadas newfstatat y read.
+ungetc() devuelve un caracter al buffer de lectura para que cuando se lea de este buffer, se pueda leer ese caracter.
