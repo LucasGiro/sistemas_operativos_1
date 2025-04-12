@@ -15,9 +15,19 @@
 
 #define SERVER_NAME "/server01"
 
+#define MAP_SIZE 1000000
+
 int main() {
 
     int socket_fd;
+
+    // creo la memoria compartida
+
+    shm_unlink("/MEMCACHED");
+
+    int msh_fd = shm_open("/MEMCACHED", O_CREAT | O_RDWR, 0666);
+
+    ftruncate(msh_fd, sizeof(char) * MAP_SIZE);
 
     // creo el socket a nivel de so (kernel) (este socket es solo para esperar conexiones)
     // todavia no tiene asignado ningun puerto.
@@ -106,22 +116,49 @@ int main() {
 
             char buffer[1024];
 
-            while (1) {
 
-                int n_bytes = read(socket_cli_fd, buffer, 1023);
+            int n_bytes = read(socket_cli_fd, buffer, 1023);
 
-                buffer[n_bytes] = '\0';
-    
-                char response[2048];
-    
-                strcpy(response, "el cliente dice: ");
-                strcat(response, buffer);
-
-                printf("%s", buffer);
-    
+            if (n_bytes <= 4) {
+                char response[] = "comando invalido";
                 write(socket_cli_fd, response, strlen(response));
-
+                exit(0);
             }
+
+            buffer[n_bytes] = '\0';
+
+            char (*map)[100] = mmap(0, sizeof(char*) * MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, msh_fd, 0);
+
+            if (!strncmp(buffer, "PUT", 3)) {
+
+                char *comando = strtok(buffer, " ");
+                char *key = strtok(NULL, " ");
+                char *value = strtok(NULL, "\n");
+                int i_key = atoi(key);
+                strncpy(map[i_key], value, 100);
+                printf("%s", map[i_key]);
+            }
+
+            if (!strncmp(buffer, "DEL", 3)) {
+                printf("me vino DEL\n");
+            }
+
+            if (!strncmp(buffer, "GET", 3)) {
+                char *comando = strtok(buffer, " ");
+                char *key = strtok(NULL, " ");
+                char *value = strtok(NULL, " ");
+                int i_key = atoi(key);
+                if (!map[i_key]) {
+                    char response[] = "NOTFOUND";
+                    write(socket_cli_fd, response, strlen(response));
+                    munmap(map, sizeof(char*) * MAP_SIZE);
+                    close(socket_cli_fd);
+                    exit(0);
+                }
+                write(socket_cli_fd, map[i_key], strlen(map[i_key]));   
+            }
+
+            munmap(map, sizeof(char*) * MAP_SIZE);
 
             close(socket_cli_fd);
 
