@@ -12,14 +12,20 @@ volatile int turno = 0;
 volatile int flag_1 = 0;
 volatile int flag_2 = 0;
 
+static inline void incl(int *p) {
+    asm("lock incl %0" : "+m"(*p) : : "memory");
+}
+
 void *molinete_1(void *args) {
 
     for (int i = 0; i < MAX_VISITANTES/2; i++) {
         flag_1 = 1;
         turno = 2;
-        asm("mfence");
+        //__sync_synchronize();
+        //asm("mfence");
         while (flag_2 && turno == 2);
-        n_visitantes = n_visitantes + 1;
+        incl(&n_visitantes);
+        //n_visitantes = n_visitantes + 1;
         flag_1 = 0;
     }
 
@@ -32,9 +38,11 @@ void *molinete_2(void *args) {
     for (int i = 0; i < MAX_VISITANTES/2; i++) {
         flag_2 = 1;
         turno = 1;
-        asm("mfence");
+        //__sync_synchronize();
+        //asm("mfence");
         while (flag_1 && turno == 1);
-        n_visitantes = n_visitantes + 1;
+        incl(&n_visitantes);
+        //n_visitantes = n_visitantes + 1;
         flag_2 = 0;
     }
 
@@ -52,10 +60,7 @@ int main() {
     pthread_join(id_molino_1, NULL);
     pthread_join(id_molino_2, NULL);
 
-    char buffer[64];
-    sprintf(buffer, "%d\n", n_visitantes);
-
-    write(STDOUT_FILENO, buffer, strlen(buffer));
+    printf("%d\n", n_visitantes);
 
     return 0;
 
