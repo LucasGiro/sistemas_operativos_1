@@ -1,0 +1,9 @@
+no se puede ubicar el fence allí, ya que puede hacer que los dos hilos entren a la región critica en este caso:
+
+1- se encuentran los dos hilos en la linea de asignar el turno
+
+2- el hilo 1 le da el turno al 2, el hilo 2 lee el turno en el while y pasa a la región critica (sin darle el turno al hilo 1)
+
+3- el hilo dos le da el turno al hilo 1 ya habiendo pasado el while y luego el hilo 1 entra a la región critica
+
+4- los dos estan en la región critica

@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<pthread.h>
 
-#define N 100000
+#define N 10000
 
 int arr[N];
 int contador = 0;
