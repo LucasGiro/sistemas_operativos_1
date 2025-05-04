@@ -1,0 +1,3 @@
+utilizando semantica mesa: funciona correctamente dado que vuelve a chequear la condicion (pan y manteca en la mesa),
+semantica hoare: puede no funcionar si las variables cambian de estado, dado que solo hace el chequeo una sola vez.
+
