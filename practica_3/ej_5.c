@@ -1,40 +1,106 @@
-//inicializar el semaforo en 0
-//llegoA;
-//llegoB;
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include "circular_queue.h"
+#include<semaphore.h>
 
-// pagina 12, chapter 13 del the book of semaphores
-// problema 3.3
+#define N 12
 
-// 2 semaforos en 0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t hay_clientes;
+pthread_barrier_t barrera1;
+pthread_barrier_t barrera2;
 
+Queue queue;
 
-//thread A;
-//a1;
-//a2;
+void *barbero(void *arg) {
 
-//Thread B;
-//b1;
-//b2;
+    while (1) {
 
-//a1 pase antes que b2 y que b1 pase antes que a2;
+        pthread_mutex_lock(&mutex);
 
-//solucion
+        if (queue_is_empty(queue)) {
+            pthread_cond_wait(&hay_clientes, &mutex);
+        }
 
-//thread A;
-//a1;
-//llegoA.post()
-//llegaB.wait()
-//a2;
+        sem_t *cliente = queue_dequeue(queue);
 
-//Thread B;
-//b1;
-//llegoB.post()
-//llegaA.wait()
-//b2;
+        pthread_mutex_unlock(&mutex);
 
-//a1 pase antes que b2 y que b1 pase antes que a2;
+        sem_post(cliente);
 
-// para el barbero, usar cola concurrente de variables de condicion o semáforos.
-// para la cola de semáforos, todos los semaforos en 0 e ir levantando el semaforo que va.
-// usar una barrera para que no paguen antes de que cortando.
-// o usar lo anterior para cortando-mecortan-pagando-mepagan
+        printf("barbero: cortando()\n");
+
+        pthread_barrier_wait(&barrera1);
+
+        printf("me_pagan()\n");
+
+        pthread_barrier_wait(&barrera2);
+
+    }
+
+}
+
+void *cliente(void *arg) {
+
+    int num = arg - (void*)0;
+
+    while (1) {
+
+        pthread_mutex_lock(&mutex);
+
+        if (queue_is_full(queue)) {
+            pthread_mutex_unlock(&mutex);
+            printf("la cola esta llena!\n");
+            continue;
+        }
+
+        sem_t sem;
+
+        sem_init(&sem, 0, 0);
+
+        queue_enqueue(queue, &sem);
+
+        pthread_cond_signal(&hay_clientes);
+
+        pthread_mutex_unlock(&mutex);
+
+        sem_wait(&sem);
+
+        printf("cliente %d: me_cortan()\n", num);
+
+        pthread_barrier_wait(&barrera1);
+
+        printf("pagando()\n");
+
+        pthread_barrier_wait(&barrera2);
+
+        sem_destroy(&sem);
+
+    }
+
+}
+
+int main() {
+
+    pthread_t clientes[N+1];
+    pthread_t barbero_thread;
+
+    queue = queue_create(N);
+
+    pthread_cond_init(&hay_clientes, NULL);
+
+    pthread_barrier_init(&barrera1, 0, 2);
+    pthread_barrier_init(&barrera2, 0, 2);
+
+    for (int i = 0; i < N+1; i++) {
+        pthread_create(&clientes[i], NULL, cliente,  i + (void*)0);
+    }
+
+    pthread_create(&barbero_thread, NULL, barbero, NULL);
+
+    pthread_join(barbero_thread, NULL);
+
+    return 0;
+}
