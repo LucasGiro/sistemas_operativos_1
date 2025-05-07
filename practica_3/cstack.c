@@ -1,7 +1,6 @@
 #include<stdio.h>
 #include "cstack.h"
 #include "stack.h"
-#include<pthread.h>
 #include<assert.h>
 #include<stdlib.h>
 
@@ -9,7 +8,15 @@ CStack cstack_create() {
     CStack cstack = malloc(sizeof(struct _CStack));
     if (!cstack) return NULL;
     cstack->stack = stack_create();
-    pthread_mutex_init(&cstack->mutex, NULL);
+    if (!cstack->stack) {
+        free(cstack);
+        return NULL;
+    }
+    if (pthread_mutex_init(&cstack->mutex, NULL)) {
+        stack_destroy(cstack->stack);
+        free(cstack);
+        return NULL;
+    }
     return cstack;
 }
 
