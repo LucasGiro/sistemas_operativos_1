@@ -19,13 +19,15 @@ void agente() {
 
 void fumar(int fumador) {
     printf("Fumador %d: Puf! Puf! Puf!\n", fumador);
-    sleep(1);
 }
 
 void *fumador1(void *arg) {
     while (1) {
-        sem_wait(&tabaco);
         sem_wait(&papel);
+        if (sem_trywait(&tabaco) < 0) {
+            sem_post(&papel);
+            continue;
+        }
         fumar(1);
         sem_post(&otra_vez);
     }
@@ -34,7 +36,10 @@ void *fumador1(void *arg) {
 void *fumador2(void *arg) {
     while (1) {
         sem_wait(&fosforos);
-        sem_wait(&tabaco);
+        if (sem_trywait(&tabaco) < 0) {
+            sem_post(&fosforos);
+            continue;
+        }
         fumar(2);
         sem_post(&otra_vez);
     }
@@ -42,14 +47,18 @@ void *fumador2(void *arg) {
 
 void *fumador3(void *arg) {
     while (1) {
-        sem_wait(&papel);
         sem_wait(&fosforos);
+        if (sem_trywait(&papel) < 0) {
+            sem_post(&fosforos);
+            continue;
+        }
         fumar(3);
         sem_post(&otra_vez);
     }
 }
 
 int main() {
+    srand(time(NULL));
     pthread_t s1, s2, s3;
     sem_init(&tabaco, 0, 0);
     sem_init(&papel, 0, 0);
