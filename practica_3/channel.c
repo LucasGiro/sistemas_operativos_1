@@ -19,6 +19,7 @@ void chan_write(struct channel *c, int v) {
 int chan_read(struct channel *c) {
     sem_post(&c->sem_escritores);
     sem_wait(&c->sem_lectores);
+    int value = c->v;
     sem_post(&c->escribiendo);
-    return c->v;
+    return value;
 }
